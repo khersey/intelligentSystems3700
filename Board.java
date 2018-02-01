@@ -24,11 +24,11 @@ class Board extends ObjectPlus {
     // goal, test whether a move is legal, determine the new state
     // from a legal move, and determine the heuristic function value of a state
 
-    Board(int state[], char lastMove, PuzzleProblem problem, int oldGVal) {
+    Board(int state[], char lastMove, PuzzleProblem problem, int gVal) {
         this.state = state;
         this.lastMove = lastMove;
         this.problem = problem;
-        this.gVal = oldGVal + 1;
+        this.gVal = gVal;
         for (int i = 0; i < 9; i++) {
             if (state[i] == 0) {
                 this.position = i;
@@ -39,15 +39,70 @@ class Board extends ObjectPlus {
     }
 
     void show() {
-
+        char move = " ";
+        switch (lastMove) {
+            case "L":
+                move = "<";
+                break;
+            case "R":
+                move = ">";
+                break;
+            case "U":
+                move = "^";
+                break;
+            case "D":
+                move = "v";
+                break;
+        }
+        System.out.println(state[0] + state[1] + state[2]);
+        System.out.println(state[3] + state[4] + state[5] + move);
+        System.out.println(state[6] + state[7] + state[8]);
     }
 
     void showPart(int index) {
+        System.out.print(state[index]);
+    }
 
+    void treePrint() {
+        String offset = "";
+        for(int i = 0; i < gVal; i++) {
+            offset = offset + "\t";
+        }
+        char move = " ";
+        switch (lastMove) {
+            case "L":
+                move = "<";
+                break;
+            case "R":
+                move = ">";
+                break;
+            case "U":
+                move = "^";
+                break;
+            case "D":
+                move = "v";
+                break;
+        }
+        System.out.println(offset + " " + move + " ");
+        System.out.println(offset + state[0] + state[1] + state[2] + " g(" + gVal + ")");
+        System.out.println(offset + state[3] + state[4] + state[5] + " h(" + hVal + ")");
+        System.out.println(offset + state[6] + state[7] + state[8] + " f(" + fVal + ")");
     }
 
     int getFVal() {
         return fVal;
+    }
+
+    int getHVal() {
+        return hVal;
+    }
+
+    int getGVal() {
+        return gVal;
+    }
+
+    char getLastMove() {
+        return lastMove;
     }
 
     boolean isGoalState() {
@@ -77,9 +132,7 @@ class Board extends ObjectPlus {
         newState[position] = newState[swap];
         newState[swap] = temp;
 
-
-
-        return new Board(newState, move, this.problem);
+        return new Board(newState, move, this.problem, gVal + 1);
     }
 
     boolean isMoveValid(char move) {
