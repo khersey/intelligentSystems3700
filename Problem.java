@@ -27,7 +27,8 @@ abstract class Problem {
         strategyHeuristics = new String(straheur);
     }
 
-    // Abstract methods// Get successors given state s.
+    // Abstract methods
+    // Get successors given state s.
     abstract LinkedList getSuccessor(ObjectPlus s);
 
     // Test if state s is a goal.
