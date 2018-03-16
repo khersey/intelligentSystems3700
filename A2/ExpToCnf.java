@@ -1,7 +1,10 @@
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +28,7 @@ class ExpToCnf {
         if (args.length != 2) {
             System.out.println("ERROR: please call the executable with 2 parameters:");
             System.out.println("    java ExpToCnf <ExpFile> <CnfFile>");
+            return;
         }
 
         String inputFileName = args[0];
@@ -36,19 +40,31 @@ class ExpToCnf {
 
         try(BufferedReader br = new BufferedReader(new FileReader(inputFileName))) {
             for(String line; (line = br.readLine()) != null; ) {
-                String exp = new String(line);
-                String cnf = converter.reduce(converter.convert(OPEN + line + CLOSE));
-                cnfList.add(cnf);
-                System.out.println("Exp: " + exp);
-                System.out.println("CNF: " + cnf);
+                if (line.length() != 0) {
+                    String exp = new String(line);
+                    String cnf = converter.reduce(converter.convert(OPEN + line + CLOSE));
+                    cnfList.add(cnf);
+                    System.out.println("Exp: " + exp);
+                    System.out.println("CNF: " + cnf);
+                }
             }
             // line is not visible here.
         } catch (IOException e) {
-            System.out.println("ERROR: something went wrong opening file: " + inputFileName);
+            System.out.println("ERROR: something went wrong reading from file: " + inputFileName);
             e.printStackTrace();
         }
 
-        
+        try(PrintWriter pr = new PrintWriter(new BufferedWriter(new FileWriter(outputFileName)))) {
+            for (String s: cnfList) {
+                LinkedList<String> clauses = converter.splitOnDisjunction(s);
+                for (String clause: clauses) {
+                    pr.write(converter.getInnerSentence(clause) + "\n");
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("ERROR: something went wrong writing to file: " + outputFileName);
+            e.printStackTrace();
+        }
         // print to out file
 
         return;
@@ -82,19 +98,22 @@ class ExpToCnf {
             q = s.substring(op.length());
         }
         
-        if (op == "" && isVariable(s)) { // is variable
+        if (op == "" && (isVariable(s) || isVariable(getInnerSentence(s)))) { // is variable
             System.out.println("    RETURN " + s);
             return s;
 
-        } else if (op == "" && isNegation(s)) { // is negated
+        } else if (op == "" && (isNegation(s) || isNegation(getInnerSentence(s)))) { // is negated
             if (isVariable(s.substring(1))) {  // is variable
                 System.out.println("    RETURN " + s);
                 return s;
-
             } else { // is sentence
                 String innerS = getInnerSentence(s);
 
                 if (isNegation(innerS) && isVariable(innerS.substring(1))) {
+                    System.out.println("    RETURN " + innerS);
+                    return innerS;
+                } else if (isNegation(getInnerSentence(innerS)) && isVariable(getInnerSentence(innerS).substring(1))) {
+                    innerS = getInnerSentence(innerS);
                     System.out.println("    RETURN " + innerS.substring(1));
                     return innerS.substring(1);
                 } else if (canDeMorgann(innerS)) {
@@ -241,7 +260,7 @@ class ExpToCnf {
         return OPEN + NOT + p + op + NOT + q + CLOSE;
     }
 
-    String getInnerSentence(String s) {
+    public String getInnerSentence(String s) {
         int start = -1;
         int end = -1;
         int depth = 0;
@@ -289,7 +308,7 @@ class ExpToCnf {
     }
 
     // WARNING: consumes input string
-    LinkedList<String> splitOnDisjunction(String set) {
+    public LinkedList<String> splitOnDisjunction(String set) {
         LinkedList<String> list = new LinkedList<String>();
 
         while(set.contains(AND)) {
